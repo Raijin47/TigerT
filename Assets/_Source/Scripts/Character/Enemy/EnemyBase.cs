@@ -2,7 +2,7 @@ using System;
 using UnityEngine;
 using UnityEngine.AI;
 
-public class EnemyBase : PoolMember
+public class EnemyBase : PoolMember, IDamageable
 {
     public event Action<int> OnTakeDamage;
 
@@ -11,6 +11,7 @@ public class EnemyBase : PoolMember
     [SerializeField] private Animator[] _animators;
     [SerializeField] private ParticleSystem _particle;
 
+    private Health _health;
     private NavMeshAgent _agent;
     private Transform _transform;
     private Coroutine _coroutine;
@@ -27,7 +28,7 @@ public class EnemyBase : PoolMember
 
             _skins[0].SetActive(isPig);
             _skins[1].SetActive(!isPig);
-            _agent.radius = isPig ? .5f : .7f;
+            _agent.radius = isPig ? .5f : .8f;
             _agent.height = isPig ? .7f : 2f;
         }
     }
@@ -62,20 +63,28 @@ public class EnemyBase : PoolMember
         _statePursuit = new(this);
         _stateAttack = new(this);
 
+        _health = new(this);
+
+
         Resurrect();
     }
 
     public override void Resurrect()
     {
         Mode = Game.Locator.Spawner.IsDangerousTime ? 1 : 0;
-
+        _health.MaxHealh = 50;
         _statePursuit.OnCanAttack += ChangeState;
         _stateAttack.OnCannotAttack += ChangeState;
         _stateIdle.OnEndIdle += ChangeState;
         _statePatrol.OnEndPatrol += ChangeState;
         _enemySearch.OnPlayerFound += Action_OnPlayerSearch;
-
+        _health.OnDie += OnDie;
         ChangeState(_statePatrol);
+    }
+
+    private void OnDie()
+    {
+        Release();
     }
 
     public void Change()
@@ -95,11 +104,7 @@ public class EnemyBase : PoolMember
         }
     }
 
-    public void ApplyDamage(int value)
-    {
-        OnTakeDamage?.Invoke(value);
-        Debug.Log("TakeDamage");
-    }
+    public void ApplyDamage(int value) => OnTakeDamage?.Invoke(value);
 
     private void Action_OnPlayerSearch(bool value)
     {

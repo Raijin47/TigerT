@@ -15,5 +15,11 @@ public class FollowTarget : MonoBehaviour
 
         //Quaternion targetRotation = Quaternion.Lerp(_transform.rotation, _target.rotation, Time.deltaTime * _followSpeed);
         //_transform.rotation = targetRotation;
+        _transform.rotation = _target.rotation;
+    }
+
+    private void FixedUpdate()
+    {
+        
     }
 }

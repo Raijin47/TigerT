@@ -1,11 +1,8 @@
 using DG.Tweening;
-using System;
 using UnityEngine;
 
 public class PlayerBase : MonoBehaviour
 {
-    public event Action<int> OnTakeDamage;
-
     [SerializeField] private PlayerMovement _movement;
     [SerializeField] private Joystick _joystick;
     [SerializeField] private Joystick _rotateJoystick;
@@ -108,8 +105,6 @@ public class PlayerBase : MonoBehaviour
             if (enemy.collider.TryGetComponent(out EnemyBase e))
                 e.ApplyDamage(Mathf.RoundToInt(_attack));      
     }
-
-    public void ApplyDamage(int value) => OnTakeDamage?.Invoke(value);
 
     private void Movement()
     {
