@@ -4,9 +4,9 @@ using UnityEngine;
 
 public class EnemySpawner : MonoBehaviour
 {
-    [SerializeField] private ParticleSystem _particle;
     [SerializeField] private int _maxEnemyCount = 5;
     [SerializeField] private EnemyBase _enemy;
+    [SerializeField] private Vector3 _spawnPosition;
 
     private readonly List<PoolMember> UsedEnemy = new();
     private readonly List<SpawnPoint> SpawnPoints = new();
@@ -29,14 +29,23 @@ public class EnemySpawner : MonoBehaviour
         }
 
         Game.Action.OnStart += Action_OnStart;
-        Game.Action.OnLose += Action_OnLose;
-        Game.Locator.Change.OnChangeState += Change;
+        Game.Action.OnLose += Release;
         Game.Locator.Timer.OnChangeState += Change;
+        Game.Action.OnPause += Action_OnPause;
+        Game.Action.OnExit += Action_Reset;
+        Game.Action.OnRestart += Action_Reset;
     }
 
-    private void Action_OnLose()
+    private void Action_Reset()
     {
-        throw new System.NotImplementedException();
+        for(int i = UsedEnemy.Count - 1; i >= 0; i--)      
+            UsedEnemy[i].ReturnToPool();       
+    }
+
+    private void Action_OnPause(bool onPause)
+    {
+        Release();
+        if(!onPause) _coroutine = StartCoroutine(SpawnProcess());
     }
 
     private void Point_OnUsedPoint(SpawnPoint point, bool active)
@@ -64,19 +73,17 @@ public class EnemySpawner : MonoBehaviour
 
     private void Spawn()
     {
-        int r = Random.Range(0, SpawnPoints.Count);
-        Vector3 spawnPosition = SpawnPoints[r].transform.position;
-        EnemyBase enemy = _enemyPool.Spawn(spawnPosition) as EnemyBase;
+        var enemy = _enemyPool.Spawn(_spawnPosition);
 
         UsedEnemy.Add(enemy);
-        enemy.Mode = _isDangerousTime ? 1 : 0;
         enemy.Die += Enemy_Die;
-        enemy.StartPosition = spawnPosition;
     }
 
     private void Change(bool value)
     {
         _isDangerousTime = value;
+
+        if (!_isDangerousTime) return;
 
         foreach (EnemyBase enemy in UsedEnemy)
             enemy.Change();
@@ -95,5 +102,11 @@ public class EnemySpawner : MonoBehaviour
             StopCoroutine(_coroutine);
             _coroutine = null;
         }
+    }
+
+    public Vector3 GetPath()
+    {
+        int r = Random.Range(0, SpawnPoints.Count);
+        return SpawnPoints[r].transform.position;
     }
 }

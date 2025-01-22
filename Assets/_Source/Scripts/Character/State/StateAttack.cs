@@ -33,7 +33,7 @@ public class StateAttack : IState
             yield return Delay;
 
             if (Physics.CheckSphere(Enemy.transform.position, 3.5f, _layer))
-                Game.Locator.Health.ApplyDamage(10);
+                Game.Locator.Health.ApplyDamage(15);
 
             yield return IntervalAttack;
         }

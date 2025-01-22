@@ -11,6 +11,7 @@ public class EnemyBase : PoolMember, IDamageable
     [SerializeField] private Animator[] _animators;
     [SerializeField] private ParticleSystem _particle;
 
+    private IState _currentState;
     private Health _health;
     private NavMeshAgent _agent;
     private Transform _transform;
@@ -25,17 +26,28 @@ public class EnemyBase : PoolMember, IDamageable
         {
             _mode = value;
             bool isPig = value == 0;
-
+            _health.MaxHealh = isPig ? 1 : 30;
             _skins[0].SetActive(isPig);
             _skins[1].SetActive(!isPig);
-            _agent.radius = isPig ? .5f : .8f;
-            _agent.height = isPig ? .7f : 2f;
         }
     }
+
+    private bool _isActive;
+    private bool IsActive
+    {
+        get => _isActive;
+        set
+        {
+            _isActive = value;
+            Agent.isStopped = !value;
+            Animator.SetBool("IsDeath", !value);
+            Release();
+        }
+    }
+
     public Animator Animator => _animators[Mode];
     public NavMeshAgent Agent => _agent;
     public Transform Transform => _transform;
-    public Vector3 StartPosition { get; set; }
     #endregion
 
     #region State
@@ -54,6 +66,8 @@ public class EnemyBase : PoolMember, IDamageable
     public override void Init()
     {
         _agent = GetComponent<NavMeshAgent>();
+        _agent.enabled = true;
+
         _transform = transform;
         _enemySearch = GetComponent<EnemySearch>();
 
@@ -62,37 +76,65 @@ public class EnemyBase : PoolMember, IDamageable
         _statePanic = new(this);
         _statePursuit = new(this);
         _stateAttack = new(this);
-
         _health = new(this);
-
 
         Resurrect();
     }
 
     public override void Resurrect()
     {
+        IsActive = true;
         Mode = Game.Locator.Spawner.IsDangerousTime ? 1 : 0;
-        _health.MaxHealh = 50;
         _statePursuit.OnCanAttack += ChangeState;
         _stateAttack.OnCannotAttack += ChangeState;
         _stateIdle.OnEndIdle += ChangeState;
         _statePatrol.OnEndPatrol += ChangeState;
         _enemySearch.OnPlayerFound += Action_OnPlayerSearch;
         _health.OnDie += OnDie;
+        _health.AddListaner();
+        Game.Action.OnLose += Action_OnLose;
         ChangeState(_statePatrol);
+    }
+
+    private void Action_OnLose()
+    {
+        _isActive = false;
+        Agent.isStopped = true;
+        Animator.SetFloat("Velocity", 0);
+        Release();
     }
 
     private void OnDie()
     {
-        Release();
+        if (!IsActive) return;
+        IsActive = false;
+
+        Game.Locator.Karma.Karma += Mode == 0 ? -2 : 2;
+
+        _statePursuit.OnCanAttack -= ChangeState;
+        _stateAttack.OnCannotAttack -= ChangeState;
+        _stateIdle.OnEndIdle -= ChangeState;
+        _statePatrol.OnEndPatrol -= ChangeState;
+        _enemySearch.OnPlayerFound -= Action_OnPlayerSearch;
+        _health.OnDie -= OnDie;
+        _health.RemoveListaner();
+        Game.Action.OnLose -= Action_OnLose;
+
+        Invoke(nameof(SpawnLoot), 3f);
+    }
+
+    private void SpawnLoot()
+    {
+        ReturnToPool();
     }
 
     public void Change()
     {
-        Mode = Game.Locator.Spawner.IsDangerousTime ? 1 : 0;
+        if (!IsActive && Mode == 1) return;
+        Mode = 1;
         _particle.Play();
         
-        ChangeState(_enemySearch.IsViewPlayer ? (Mode == 0 ? _statePanic : _statePursuit) : _stateIdle);
+        ChangeState(_enemySearch.IsViewPlayer ? _statePursuit : _stateIdle);
     }
 
     public override void Release()
@@ -104,17 +146,24 @@ public class EnemyBase : PoolMember, IDamageable
         }
     }
 
-    public void ApplyDamage(int value) => OnTakeDamage?.Invoke(value);
+    public void ApplyDamage(int value)
+    {
+        if (!IsActive) return;
+        OnTakeDamage?.Invoke(value);
+    }
 
     private void Action_OnPlayerSearch(bool value)
     {
+        if (!IsActive) return;
         ChangeState(value ? (Mode == 0 ? _statePanic : _statePursuit) : _stateIdle);
     }
 
     private void ChangeState(IState state)
     {
+        if (!IsActive) return;
         Release();
 
+        _currentState = state;
         state.Enter();
         _coroutine = StartCoroutine(state.UpdateProcess());
     }

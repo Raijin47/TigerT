@@ -9,10 +9,11 @@ public class Locator
     [SerializeField] private Timer _timer;
     [SerializeField] private ChangeStateItem _change;
     [SerializeField] private HealthView _heath;
-
+    [SerializeField] private KarmaCounter _karma;
     public PlayerBase Player => _player;
     public EnemySpawner Spawner => _spawner;
     public Timer Timer => _timer;
     public ChangeStateItem Change => _change;
     public HealthView Health => _heath;
+    public KarmaCounter Karma => _karma;
 }

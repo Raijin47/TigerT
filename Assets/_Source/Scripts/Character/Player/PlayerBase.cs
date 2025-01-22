@@ -16,14 +16,13 @@ public class PlayerBase : MonoBehaviour
     private LayerMask _layer;
 
     private bool _isPause;
-
-    private float _attack;
+    private bool _isAttack;
 
     private float _horizontal;
     private float _vertical;
     private float _moveAmount;
 
-    private bool IsPause
+    private bool IsActive
     {
         get => _isPause;
         set
@@ -43,32 +42,22 @@ public class PlayerBase : MonoBehaviour
     private void Start()
     {
         _isPause = true;
-        Game.Action.OnPause += OnPause;
-        Game.Action.OnEnter += () =>
-        {
-            _animator.OnGame = true;
-            OnPause(false);
-        };
-        Game.Action.OnExit += () =>
-        {
-            _animator.OnGame = false;
-        };
+        Game.Action.OnStart += () => IsActive = false;
+        Game.Action.OnLose += () => IsActive = true;
+        Game.Action.OnRestart += Action_Reset;
+        Game.Action.OnExit += Action_Reset;
     }
 
+    private void Action_Reset() => transform.SetPositionAndRotation(Vector3.zero, Quaternion.Euler(Vector3.zero));
     private void Update()
     {
-        if (IsPause) return;
+        if (IsActive || _isAttack) return;
         GetInput();
     }
     private void FixedUpdate()
     {
-        if (IsPause) return;
+        if (IsActive || _isAttack) return;
         Movement();
-    }
-    private void OnPause(bool pause)
-    {
-        IsPause = pause;
-        _animator.IsActive = !pause;
     }
 
     private void GetInput()
@@ -79,8 +68,8 @@ public class PlayerBase : MonoBehaviour
 
     public void Attack()
     {
-        if (IsPause) return;
-        IsPause = true;
+        if (_isAttack || IsActive) return;
+        _isAttack = true;
         _animator.Attack();
         _particle.Play();
 
@@ -88,13 +77,13 @@ public class PlayerBase : MonoBehaviour
 
         _sequence = DOTween.Sequence();
 
-        _sequence.Append(_transform.DOLocalMoveZ(1, 1f).OnComplete(CheckEnemy)).
-            Append(_transform.DOLocalMoveZ(0, .5f)
+        _sequence.Append(_transform.DOLocalMoveZ(1, 0.5f).OnComplete(CheckEnemy)).
+            Append(_transform.DOLocalMoveZ(0, .5f))
             .OnComplete(() => 
             {
-                IsPause = false;
+                _isAttack = false;
                 _particle.Stop();
-            }));
+            });
     }
 
     private void CheckEnemy()
@@ -103,7 +92,7 @@ public class PlayerBase : MonoBehaviour
 
         foreach (RaycastHit enemy in enemies)   
             if (enemy.collider.TryGetComponent(out EnemyBase e))
-                e.ApplyDamage(Mathf.RoundToInt(_attack));      
+                e.ApplyDamage(Mathf.RoundToInt(10));      
     }
 
     private void Movement()

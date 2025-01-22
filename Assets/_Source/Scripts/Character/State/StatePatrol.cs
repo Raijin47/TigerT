@@ -1,7 +1,5 @@
 using System;
 using System.Collections;
-using UnityEngine;
-using Random = UnityEngine.Random;
 
 public class StatePatrol : IState
 {
@@ -9,8 +7,7 @@ public class StatePatrol : IState
 
     private readonly EnemyBase Enemy;
 
-    private const float _speed = 0.7f;
-    private const float _patrolDistance = 20f;
+    private const float _speed = 0.8f;
 
     public StatePatrol(EnemyBase enemy) => Enemy = enemy;
 
@@ -18,7 +15,7 @@ public class StatePatrol : IState
     {
         Enemy.Agent.isStopped = false;
         Enemy.Agent.speed = _speed;
-        Enemy.Agent.destination = GetPath();
+        Enemy.Agent.SetDestination(Game.Locator.Spawner.GetPath());
         Enemy.Animator.SetFloat("Velocity", 0.5f);
     }
 
@@ -28,10 +25,5 @@ public class StatePatrol : IState
             yield return null;
         
         OnEndPatrol?.Invoke(Enemy.StateIdle);
-    }
-
-    private Vector3 GetPath()
-    {
-        return Enemy.StartPosition + new Vector3(Random.Range(-_patrolDistance, _patrolDistance), 0, Random.Range(-_patrolDistance, _patrolDistance));
     }
 }

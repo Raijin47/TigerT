@@ -6,20 +6,17 @@ public class Health
     public event Action OnChange;
     public event Action OnDie;
 
+    private readonly IDamageable Damageable;
+
     private int _maxHealth;
     private int _health;
 
     private bool _isDie;
 
-    public Health(IDamageable idamageable) => idamageable.OnTakeDamage += TakeDamage;
-
-    public float Fill
+    public Health(IDamageable idamageable)
     {
-        get
-        {
-            float t = Current / MaxHealh;
-            return t;
-        }
+        Damageable = idamageable;
+        Damageable.OnTakeDamage += TakeDamage;
     }
 
     public int MaxHealh 
@@ -51,5 +48,7 @@ public class Health
         } 
     }
 
+    public void AddListaner() => Damageable.OnTakeDamage += TakeDamage;
+    public void RemoveListaner() => Damageable.OnTakeDamage -= TakeDamage;
     private void TakeDamage(int value) => Current -= value;
 }

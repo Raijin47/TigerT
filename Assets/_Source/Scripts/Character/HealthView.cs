@@ -16,6 +16,13 @@ public class HealthView : MonoBehaviour, IDamageable
     {
         _health = new(this);
         _health.OnChange += UpdateUI;
+
+        _health.OnDie += OnDie;
+        Game.Action.OnStart += Action_OnStart;
+    }
+
+    private void Action_OnStart()
+    {
         _health.MaxHealh = 100;
     }
 
@@ -26,6 +33,11 @@ public class HealthView : MonoBehaviour, IDamageable
         _sequence = DOTween.Sequence();
 
         _sequence.Append(_slider.DOValue(_health.Current, .5f));
+    }
+
+    private void OnDie()
+    {
+        Game.Action.SendLose();
     }
 
     public void ApplyDamage(int value) => OnTakeDamage?.Invoke(value);

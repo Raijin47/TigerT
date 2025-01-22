@@ -23,7 +23,8 @@ public class PageGame : PanelBase
         base.Start();
 
         Game.Action.OnEnter += Enter;
-        Game.Action.OnExit += Exit;
+        Game.Action.OnLose += Exit;
+        Game.Action.OnRestart += Enter;
     }
 
     protected override void OnShowComplated()

@@ -9,7 +9,7 @@ public class EnemySearch : MonoBehaviour
     [SerializeField] private LayerMask _layer;
 
     private Coroutine _coroutine;
-    [SerializeField, Range(1, 50)] private float _viewRadius = 10f;
+    private const float _viewRadius = 20f;
     private readonly WaitForSeconds Delay = new(.5f);
     private bool _isViewPlayer;
     public bool IsViewPlayer => _isViewPlayer;
@@ -71,11 +71,5 @@ public class EnemySearch : MonoBehaviour
 
         StopCoroutine(_coroutine);
         _coroutine = null;
-    }
-
-    private void OnDrawGizmosSelected()
-    {
-        Gizmos.color = new(0, 0, 1, 0.3f);
-        Gizmos.DrawSphere(transform.position, _viewRadius);
     }
 }

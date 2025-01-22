@@ -9,7 +9,7 @@ public abstract class PanelBase : MonoBehaviour
     protected CanvasGroup _canvas;
     protected Sequence _sequence;
 
-    protected const float _delay = 1f;
+    protected const float _delay = .2f;
 
     private void Awake() => _canvas = GetComponent<CanvasGroup>();
 
