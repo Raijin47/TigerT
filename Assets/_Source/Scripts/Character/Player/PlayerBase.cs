@@ -1,4 +1,4 @@
-using DG.Tweening;
+using System.Collections;
 using UnityEngine;
 
 public class PlayerBase : MonoBehaviour
@@ -12,7 +12,6 @@ public class PlayerBase : MonoBehaviour
     [SerializeField] private float _rayDistance;
 
     private CharacterAnimation _animator;
-    private Sequence _sequence;
     private LayerMask _layer;
 
     private bool _isPause;
@@ -69,21 +68,31 @@ public class PlayerBase : MonoBehaviour
     public void Attack()
     {
         if (_isAttack || IsActive) return;
+
         _isAttack = true;
         _animator.Attack();
         _particle.Play();
+        Game.Audio.PlayClip(0);
 
-        _sequence?.Kill();
+        StartCoroutine(AttackProcess());
+    }
 
-        _sequence = DOTween.Sequence();
+    private readonly WaitForSeconds StartAttackDelay = new(.4f);
+    private readonly WaitForSeconds EndAttackDelay = new(1.2f);
 
-        _sequence.Append(_transform.DOLocalMoveZ(1, 0.5f).OnComplete(CheckEnemy)).
-            Append(_transform.DOLocalMoveZ(0, .5f))
-            .OnComplete(() => 
-            {
-                _isAttack = false;
-                _particle.Stop();
-            });
+    private IEnumerator AttackProcess()
+    {
+        _animator.Attack();
+        _particle.Play();
+
+        yield return StartAttackDelay;
+
+        CheckEnemy();
+
+        yield return EndAttackDelay;
+
+        _isAttack = false;
+        _particle.Stop();
     }
 
     private void CheckEnemy()

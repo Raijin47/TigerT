@@ -109,7 +109,20 @@ public class EnemyBase : PoolMember, IDamageable
         if (!IsActive) return;
         IsActive = false;
 
-        Game.Locator.Karma.Karma += Mode == 0 ? -2 : 2;
+        bool isPig = Mode == 0;
+
+        Game.Locator.Karma.Karma += isPig ? -2 : 2;
+        if (isPig)
+        {
+            Game.Locator.Stats.PigKilled++;
+            Game.Audio.PlayClip(3);
+        }
+
+        else
+        {
+            Game.Locator.Stats.OrcKilled++;
+            Game.Audio.PlayClip(4);
+        }
 
         _statePursuit.OnCanAttack -= ChangeState;
         _stateAttack.OnCannotAttack -= ChangeState;

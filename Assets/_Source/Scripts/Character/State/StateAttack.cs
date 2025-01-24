@@ -29,6 +29,7 @@ public class StateAttack : IState
         {
             Enemy.Transform.LookAt(Game.Locator.Player.transform);
             Enemy.Animator.SetTrigger("Attack");
+            Game.Audio.PlayClip(5);
 
             yield return Delay;
 

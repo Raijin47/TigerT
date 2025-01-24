@@ -37,7 +37,13 @@ public class HealthView : MonoBehaviour, IDamageable
 
     private void OnDie()
     {
+        Game.Audio.PlayClip(1);
         Game.Action.SendLose();
+    }
+
+    public void Heal()
+    {
+        _health.Current += 20;
     }
 
     public void ApplyDamage(int value) => OnTakeDamage?.Invoke(value);

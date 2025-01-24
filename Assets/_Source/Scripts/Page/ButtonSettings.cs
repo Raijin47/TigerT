@@ -1,6 +1,4 @@
 using DG.Tweening;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -13,23 +11,18 @@ public class ButtonSettings : PanelBase
     protected override void Hide()
     {
         _sequence.Append(_canvas.DOFade(0, _delay)).
-            Join(_components[0].DOLocalMoveX(0, _delay)).
-            Join(_components[1].DOLocalMoveX(110, _delay)).
-
-            //Join(_components[2].DOScaleX(0, _delay));
-            Join(_slider.DOValue(0, _delay));
+            Join(_components[0].DOLocalMoveX(0, _delay).SetEase(Ease.InBack)).
+            Join(_components[1].DOLocalMoveX(110, _delay).SetEase(Ease.InBack)).
+            Join(_slider.DOValue(50, _delay).SetEase(Ease.InBack));
     }
 
     protected override void Show()
     {
         _sequence.Append(_canvas.DOFade(1, _delay)).
 
-            Join(_components[0].DOLocalMoveX(110, _delay).From(0).SetEase(Ease.OutBack)).
-            Join(_components[1].DOLocalMoveX(220, _delay).From(110).SetEase(Ease.OutBack)).
-
-            //Join(_components[2].DOScaleX(3, _delay).SetEase(Ease.OutBack).From(0)).
-            Join(_slider.DOValue(1, _delay)).
-
+            Join(_components[0].DOLocalMoveX(110, _delay).SetEase(Ease.OutBack)).
+            Join(_components[1].DOLocalMoveX(220, _delay).SetEase(Ease.OutBack)).
+            Join(_slider.DOValue(75, _delay).SetEase(Ease.OutBack)).
 
             OnComplete(OnShowComplated);
     }

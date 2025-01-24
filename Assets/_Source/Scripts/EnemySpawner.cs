@@ -8,9 +8,11 @@ public class EnemySpawner : MonoBehaviour
     [SerializeField] private EnemyBase _enemy;
     [SerializeField] private Vector3 _spawnPosition;
 
-    private readonly List<PoolMember> UsedEnemy = new();
-    private readonly List<SpawnPoint> SpawnPoints = new();
-    private readonly WaitForSeconds Interval = new(5f);
+    private readonly List<PoolMember> Pig = new();
+    private readonly List<PoolMember> Orc = new();
+    private readonly List<SpawnPoint> PathPoints = new();
+    private readonly WaitForSeconds Interval = new(10f);
+    private readonly WaitForSeconds Delay = new(5f);
 
     private Coroutine _coroutine;
     private Pool _enemyPool;
@@ -25,7 +27,7 @@ public class EnemySpawner : MonoBehaviour
         foreach(SpawnPoint point in GetComponentsInChildren<SpawnPoint>())
         {
             point.OnUsedPoint += Point_OnUsedPoint;
-            if (!point.IsUsed) SpawnPoints.Add(point);
+            if (!point.IsUsed) PathPoints.Add(point);
         }
 
         Game.Action.OnStart += Action_OnStart;
@@ -38,8 +40,11 @@ public class EnemySpawner : MonoBehaviour
 
     private void Action_Reset()
     {
-        for(int i = UsedEnemy.Count - 1; i >= 0; i--)      
-            UsedEnemy[i].ReturnToPool();       
+        for(int i = Pig.Count - 1; i >= 0; i--)      
+            Pig[i].ReturnToPool();
+
+        for (int i = Orc.Count - 1; i >= 0; i--)
+            Orc[i].ReturnToPool();
     }
 
     private void Action_OnPause(bool onPause)
@@ -50,8 +55,8 @@ public class EnemySpawner : MonoBehaviour
 
     private void Point_OnUsedPoint(SpawnPoint point, bool active)
     {
-        if (active) SpawnPoints.Remove(point);
-        else SpawnPoints.Add(point);
+        if (active) PathPoints.Remove(point);
+        else PathPoints.Add(point);
     }
 
     private void Action_OnStart()
@@ -65,9 +70,37 @@ public class EnemySpawner : MonoBehaviour
     {
         while(true)
         {
-            yield return new WaitWhile(() => UsedEnemy.Count >= _maxEnemyCount);
+            yield return new WaitWhile(() => Pig.Count >= _maxEnemyCount);
             yield return Interval;
             Spawn();
+        }
+    }
+
+    private IEnumerator ChangeProcess()
+    {
+        while (Pig.Count != 0)
+        {
+            int i = Random.Range(0, Pig.Count);
+            var pig = Pig[i] as EnemyBase;
+
+            pig.Change();
+
+            pig.Die -= Pig_Die;
+            pig.Die += Orc_Die;
+            Orc.Add(pig);
+            Pig.Remove(pig);
+            yield return Delay;
+
+        }
+        while(true)
+        {
+            yield return new WaitWhile(() => Orc.Count >= _maxEnemyCount);
+            yield return Interval;
+
+            var enemy = _enemyPool.Spawn(_spawnPosition);
+
+            Orc.Add(enemy);
+            enemy.Die += Orc_Die;
         }
     }
 
@@ -75,24 +108,28 @@ public class EnemySpawner : MonoBehaviour
     {
         var enemy = _enemyPool.Spawn(_spawnPosition);
 
-        UsedEnemy.Add(enemy);
-        enemy.Die += Enemy_Die;
+        Pig.Add(enemy);
+        enemy.Die += Pig_Die;
     }
 
     private void Change(bool value)
     {
         _isDangerousTime = value;
 
-        if (!_isDangerousTime) return;
-
-        foreach (EnemyBase enemy in UsedEnemy)
-            enemy.Change();
+        Release();
+        _coroutine = StartCoroutine(_isDangerousTime ? ChangeProcess() : SpawnProcess());
     }
 
-    private void Enemy_Die(PoolMember enemy)
+    private void Pig_Die(PoolMember pig)
     {
-        UsedEnemy.Remove(enemy);
-        enemy.Die -= Enemy_Die;
+        Pig.Remove(pig);
+        pig.Die -= Pig_Die;
+    }
+
+    private void Orc_Die(PoolMember orc)
+    {
+        Orc.Remove(orc);
+        orc.Die -= Orc_Die;
     }
 
     private void Release()
@@ -106,7 +143,7 @@ public class EnemySpawner : MonoBehaviour
 
     public Vector3 GetPath()
     {
-        int r = Random.Range(0, SpawnPoints.Count);
-        return SpawnPoints[r].transform.position;
+        int r = Random.Range(0, PathPoints.Count);
+        return PathPoints[r].transform.position;
     }
 }

@@ -24,6 +24,8 @@ public class ChangeStateItem : MonoBehaviour
     {
         OnPickUpItem?.Invoke();
         ChangePosition();
+        Game.Audio.PlayClip(2);
+        Game.Locator.Health.Heal();
     }
 
     private void ChangePosition()
@@ -31,7 +33,6 @@ public class ChangeStateItem : MonoBehaviour
         var pos = _content.position;
         _collider.enabled = false;
         _sequence?.Kill();
-
 
         _sequence = DOTween.Sequence();
 
